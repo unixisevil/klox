@@ -1,0 +1,78 @@
+class vec3 {
+	init(x, y, z)  {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+	}
+}
+
+fun donut(x, y, z) {
+	var radius = 0.4;
+	var thickness = 0.3;
+	var t = sqrt(x*x + y*y) - radius;
+	return  sqrt(t * t  +  z * z)  - thickness / 2;
+}
+
+
+fun normal(sdf, x, y, z)  {
+	var off = 0.001;
+	var n_x = sdf(x + off, y, z) - sdf(x - off, y, z);
+	var n_y = sdf(x, y + off, z) - sdf(x, y - off, z);
+	var n_z = sdf(x, y, z + off) - sdf(x, y, z - off);
+	var norm  = sqrt(n_x * n_x  + n_y * n_y  + n_z * n_z);
+
+	return vec3(n_x/norm,  n_y/norm,  n_z/norm);
+}
+
+fun sample(x, y)  {
+    var z = -10;
+    for(var step = 0; step < 30; step = step + 1) {
+	    var theta = clock() * 2;
+            var t_x = x * cos(theta) - z * sin(theta);
+            var t_z = x * sin(theta) + z * cos(theta);
+	    var d = donut(t_x, y, t_z);
+	    if(d  <=  0.01) {
+                var ret  = normal(donut, t_x, y, t_z);
+		var nt_y = ret.y;
+		var nt_z = ret.z;
+		var is_lit  = nt_y < -0.15;
+		var is_frosted = nt_z < -0.5;
+		if(is_frosted) {
+			if(is_lit){
+				return "@";
+			}else {
+				return "#";
+			}
+		}else {
+                        if(is_lit){
+				return "=";
+			}else {
+				return ".";
+			}
+		}
+	    }else {
+		z = z + d;
+	    }
+    }
+    return " ";
+}
+
+for(;;) {
+	var frame_str = "";
+	for(var y = 0; y < 20; y = y+1){
+	    for(var x = 0; x < 80; x = x+1){
+              var remapped_x = x / 80 * 2 - 1;
+              var remapped_y = (y / 20 * 2 - 1) * (2 * 20/80);
+              frame_str = frame_str + sample(remapped_x, remapped_y);
+	    }
+	    frame_str = frame_str + "\n";
+	}
+        print "\u001b[2J" + frame_str;
+	sleep(33.3);
+}
+
+//print donut(1.0, 2.0, 3.0);
+//var v3 = normal(donut, 1.0, 2.0, 3.0);
+//print v3.x;
+//print v3.y;
+//print v3.z;
